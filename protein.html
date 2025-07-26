@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Protein Intake Calculator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #e0f7fa, #f1f8e9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    h2 {
+      text-align: center;
+      color: #2e7d32;
+      margin-bottom: 20px;
+    }
+    label {
+      margin-top: 15px;
+      font-weight: bold;
+      display: block;
+    }
+    input, select, button {
+      margin-top: 8px;
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #66bb6a;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #4caf50;
+    }
+    #result, #required-protein {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #37474f;
+    }
+    #food-image {
+      display: block;
+      max-width: 100%;
+      max-height: 150px;
+      margin-top: 10px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Protein Intake Tracker</h2>
+
+  <label for="weight">Enter your weight (kg):</label>
+  <input type="number" id="weight" step="0.1" required>
+  <button onclick="calculateRequired()">Calculate Protein Requirement</button>
+
+  <p id="required-protein"></p>
+
+  <label for="food">Select food item:</label>
+  <select id="food" onchange="showImage()"></select>
+  <img id="food-image" src="" alt="Selected food image" style="display:none;">
+
+  <label for="quantity">Enter quantity consumed:</label>
+  <input type="number" id="quantity" step="0.1">
+
+  <button onclick="addProtein()">Add Protein</button>
+
+  <p id="result"></p>
+</div>
+
+<script>
+const foods = [
+  { name: "Egg", protein: 6.0, unitSize: 1, unit: "egg", image: "https://images-prod.healthline.com/hlcmsresource/images/AN_images/health-benefits-of-eggs-1296x728-feature.jpg" },
+  { name: "Chicken breast", protein: 31.0, unitSize: 100, unit: "g", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEZIE-Q-DzVv_whkHFCRsKFv28kTw_eVoATQ&s" },
+  { name: "Lentils", protein: 9.0, unitSize: 100, unit: "g", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQGX5AMGlG7A-A3pJyxk2YxDe5QTGPn9i2aNg&s" },
+  { name: "Almonds", protein: 6.0, unitSize: 28, unit: "g", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQWoq71VdOaqBfkM5FXlHz8OYtscfA7VjrQIA&s" },
+  { name: "Milk", protein: 3.4, unitSize: 100, unit: "ml", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdLYLrpcL-2TKZDY0eljDthboDPMytCCRgVg&s" },
+  { name: "Paneer", protein: 18.0, unitSize: 100, unit: "g", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXYeXP271T5qwgjUr_0MEqA72tO-TRBYMcqw&s" },
+  { name: "Peanut Butter", protein: 8.0, unitSize: 100, unit: "g", image: "https://images.getrecipekit.com/20230102102018-peanut_butter_01_520x500.webp?aspect_ratio=1:1&quality=90&" },
+  { name: "Banana", protein: 1.1, unitSize: 100, unit: "g", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgmNSjoB5W5DIFKuD2DjviUvB5JjLu9ypHuA&s" },
+  { name: "Oats", protein: 13.0, unitSize: 100, unit: "g", image: "https://findfresh.in/attachments/shop_images/1632429307666.jpeg" },
+  { name: "Yoghurt", protein: 10.0, unitSize: 100, unit: "g", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrHz-OcgDkTIVYjr0WO7ok4tbvA_L1xbK7nQ&s" },
+    { name: "Shrimp", protein: 24.0, unitSize: 100, unit: "g" ,image:"https://cdn.apartmenttherapy.info/image/upload/f_auto,q_auto:eco,c_fill,g_auto,w_1500,ar_3:2/k%2FPhoto%2FSeries%2F2024-01-how-to-cook-shrimp%2Fhow-to-cook-shrimp-159"},
+    { name: "Cheddar Cheese", protein: 25.0, unitSize: 100, unit: "g",image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsfNMW9HMUzeLxK2gaQjhMMmtJ3TuN_I8N7Q&s" },
+    { name: "Cottage Cheese", protein: 11.0, unitSize: 100, unit: "g" ,image:"https://images.ctfassets.net/trvmqu12jq2l/4mg2CaJiRVQyt0uzF2pSN/a5e85b3d7e82bc95a1eb7737ddad5e0a/CxBlog-DD-Cottage-Daisy.jpg"},
+    { name: "Black Beans", protein: 8.9, unitSize: 100, unit: "g",image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfYLppZfV0oDNrEJtMZxG7OvWlIP7R36Kejw&s" },
+    { name: "Chickpeas", protein: 8.9, unitSize: 100, unit: "g" ,image:"https://post.medicalnewstoday.com/wp-content/uploads/sites/3/2022/04/chickpeas_closeup_1296x728_header-1024x575.jpg"},
+    { name: "Fish(Rohu)", protein: 19.5, unitSize: 100, unit: "g" ,image:"https://capon.in/media/2022/04/fresh-rohu-fish-capon.jpg"},
+    { name: "Brown Rice", protein: 2.6, unitSize: 100, unit: "g",image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcbWp8JRK-jY0XVRL6JSKfSsx9YEKDPDbSgg&s" },
+    { name: "White Rice", protein: 2.7, unitSize: 100, unit: "g" ,image:"https://images.onlymyhealth.com/imported/images/2023/June/06_Jun_2023/Main-whiterice.jpg"},
+    { name: "Broccoli", protein: 2.8, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5HI921PGF_R6Kqm0ESAHt9BT9snCb1lghkQ&s"},
+    { name: "Spinach", protein: 2.9, unitSize: 100, unit: "g" ,image:"https://www.cosmichiland.com/wp-content/uploads/2023/04/Indian-Spinach.jpg"},
+    { name: "Peas", protein: 5.4, unitSize: 100, unit: "g",image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSigbzegjFYwAKZcS-E41J9DT4aOQwamAKt-w&s" },
+    { name: "Crab", protein: 18.0, unitSize: 100, unit: "g",image:"https://beyondsweetandsavory.com/wp-content/uploads/2021/05/Vietnamese-tamarind-crabs-Vy-Tran-14-of-15-853x1280-1.jpg" },
+    { name: "Soybeans", protein: 16.6, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSbWN9TdltiJGpZkHuGh9a5WCgirdbBpsR7tg&s"},
+    { name: "Whey Protein", protein: 80.0, unitSize: 100, unit: "g" ,image:""},
+    { name: "Sausage", protein: 16.0, unitSize: 100, unit: "g" ,image:"https://www.ketofocus.com/wp-content/uploads/air-fryer-breakfast-sausage-plate.jpg"},
+    { name: "Buttermilk", protein: 3.3, unitSize: 100, unit: "ml" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ_uAi2oZXtfEUlx7U2D6dVu8SqjAkpBcsATA&s"},
+    { name: "Ice Cream", protein: 3.5, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQA4F2gZidrNWH_iPuypbfzcDFKGRuy-6CaTw&s"},
+    { name: "Butter", protein: 0.9, unitSize: 100, unit: "g" ,image:"https://cdn.britannica.com/27/122027-050-EAA86783/Butter.jpg"},
+    { name: "Mayonnaise", protein: 1.0, unitSize: 100, unit: "g" ,image:"https://natashaskitchen.com/wp-content/uploads/2025/01/Homemade-Mayonnaise-2.jpg"},
+    { name: "Avocado", protein: 2.0, unitSize: 100, unit: "g" ,image:"https://images.news18.com/webstories/uploads/2025/03/avocado-fruit-background_23-2151932284-2025-03-d8a2ad0339ba55925c9c6c962787c3b4.jpg"},
+    { name: "Potato", protein: 2.0, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7FFtYRniDMrJmbM_d3ERJMQVUtS5yJIodwA&s"},
+    { name: "Sweet Potato", protein: 1.6, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVdX7wf8GcwCJ4rnBu07wMueAPvutJYHf1HQ&s"},
+    { name: "Carrot", protein: 0.9, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTba3FfUO6CI9cySnHdGt1roZY60bdUInxLXQ&s"},
+    { name: "Cucumber", protein: 0.7, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRiZEk16LGB_gKTEHNjbWWOT608eIwKwhIlug&s"},
+    { name: "Tomato", protein: 0.9, unitSize: 100, unit: "g" ,image:"https://cdn.britannica.com/16/187216-050-CB57A09B/tomatoes-tomato-plant-Fruit-vegetable.jpg"},
+    { name: "Apple", protein: 0.3, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ868djAR5mIlAFnnjF---4paarCg48aQTr-g&s"},
+    { name: "Orange", protein: 0.9, unitSize: 100, unit: "g" ,image:"https://farmers.org.au/wp-content/uploads/2021/04/White-Post-Note-Card-13.jpg"},
+    { name: "Strawberry", protein: 0.8, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0gRT71EwtApQ8ACXCGyfvsCkuxwIXsx2z8Q&s"},
+    { name: "Blueberry", protein: 0.7, unitSize: 100, unit: "g" ,image:"https://media.post.rvohealth.io/wp-content/uploads/2020/08/blueberries_fresh_fullframe_732x549_thumb-732x549.jpg"},
+    { name: "Raspberry", protein: 1.2, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSk-k_lv6L0dU7km1VpLN0IQV-Nr8jVNS69vw&s"},
+    { name: "Pineapple", protein: 0.5, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwQEufNqMVuH68lzbrSyA3Za4NU1yAGKnouA&s"},
+    { name: "Mango", protein: 0.8, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdpVX7EjHIWT8dGepB3MGy8qE44UvpuIiY-w&s"},
+    { name: "Papaya", protein: 0.5, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTB6a4h4DJkWudddqEgmMHVnRsBIqI3HMatvg&s"},
+    { name: "Grapes", protein: 0.6, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-mDqo5mgpgcJOodu3hV6wM8ThMr-Hj4wJ0g&s"},
+    { name: "Watermelon", protein: 0.6, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgG7tw8ZRoiLjBuY0o0SmA2pKQCUwNilL-7Q&s"},
+    { name: "Pumpkin", protein: 1.0, unitSize: 100, unit: "g" ,image:"https://www.bbassets.com/media/uploads/p/l/40023471_5-fresho-pumpkin-organically-grown.jpg"},
+    { name: "Onion", protein: 1.1, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8q08WhpczEznhtGN8yMjO4H4QJtfm351g9w&s"},
+    { name: "Garlic", protein: 6.4, unitSize: 100, unit: "g" ,image:"https://tildaricelive.s3.eu-central-1.amazonaws.com/wp-content/uploads/2022/04/25115428/Full-garlics-edit-1440x970.jpg"},
+    { name: "Mushroom", protein: 3.1, unitSize: 100, unit: "g" ,image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7ZqXGlp5AORynAc-_WO-0Bt-Z2SwVzb5lRg&s"},
+    { name: "Cashews", protein: 18.0, unitSize: 100, unit: "g" ,image:"https://gourmetgarden.in/cdn/shop/products/Classic_Cashews-100_7d2c8f23-6dde-49e0-a433-c4fe3fd3aa4e.jpg?v=1749812846"},
+    { name: "Walnuts", protein: 15.0, unitSize: 100, unit: "g" ,image:"https://domf5oio6qrcr.cloudfront.net/medialibrary/9531/iStock-481114390.jpg"},
+    { name: "Pistachios", protein: 20.0, unitSize: 100, unit: "g",image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgKrdnHz23wRBavGwHVZ2JVJBKmfIXqrVFVQ&s" }
+];
+
+
+let requiredProtein = 0;
+let totalProtein = 0;
+
+const foodSelect = document.getElementById('food');
+foods.forEach((food, index) => {
+  const option = document.createElement('option');
+  option.value = index;
+  option.textContent = `${food.name} (${food.protein}g per ${food.unitSize} ${food.unit})`;
+  foodSelect.appendChild(option);
+});
+
+function calculateRequired() {
+  const weight = parseFloat(document.getElementById('weight').value);
+  if (isNaN(weight) || weight <= 0) {
+    alert("Please enter a valid weight.");
+    return;
+  }
+  requiredProtein = weight * 0.8;
+  document.getElementById('required-protein').textContent =
+    `✅ You need approx. ${requiredProtein.toFixed(2)}g of protein/day.`;
+}
+
+function addProtein() {
+  const selectedIndex = parseInt(foodSelect.value);
+  const quantity = parseFloat(document.getElementById('quantity').value);
+
+  if (isNaN(quantity) || quantity <= 0) {
+    alert("Please enter a valid quantity.");
+    return;
+  }
+
+  const food = foods[selectedIndex];
+  const added = (food.protein * quantity) / food.unitSize;
+  totalProtein += added;
+
+  document.getElementById('result').innerHTML = `
+    ➕ Added <strong>${added.toFixed(2)}g</strong> protein from <strong>${food.name}</strong>.<br>
+    🧮 Total protein intake: <strong>${totalProtein.toFixed(2)}g</strong><br>
+    ${totalProtein >= requiredProtein
+      ? "🎉 <span style='color:green'>You've met your daily protein goal!</span>"
+      : `⚠️ <span style='color:red'>You need ${(requiredProtein - totalProtein).toFixed(2)}g more protein.</span>`}
+  `;
+}
+
+function showImage() {
+  const selectedIndex = parseInt(foodSelect.value);
+  const img = document.getElementById('food-image');
+  if (!isNaN(selectedIndex) && foods[selectedIndex].image) {
+    img.src = foods[selectedIndex].image;
+    img.style.display = "block";
+  } else {
+    img.style.display = "none";
+  }
+}
+</script>
+
+</body>
+</html>
