@@ -1,3 +1,3 @@
 # protein-intake-calculator
-Sarang Kolekar
+Sarang Kolekar<br><hr>
 protein
